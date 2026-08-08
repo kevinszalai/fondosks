@@ -91,6 +91,11 @@
   .pool-card .lbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass-dark); font-weight:600; font-family:'IBM Plex Mono',monospace;}
   .pool-card .amt{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(30px,5vw,40px); margin:6px 0 4px; letter-spacing:-.02em;}
   .pool-card .hint{font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
+  .pool-breakdown{
+    font-size:12px; color:var(--ink-soft); margin:0 0 12px; padding:9px 11px;
+    background:rgba(169,118,47,.08); border:1px solid var(--line-soft); border-radius:9px; line-height:1.5;
+  }
+  .pool-breakdown b{color:var(--brass-dark); font-family:'IBM Plex Mono',monospace; font-weight:600;}
 
   .stats-card{padding:20px 24px; display:flex; flex-direction:column; justify-content:center; gap:14px;}
   .stat-line{display:flex; align-items:center; justify-content:space-between; gap:10px;}
@@ -341,7 +346,8 @@
     <div class="card pool-card">
       <p class="lbl">Pozo sin asignar</p>
       <p class="amt mono" id="pool-amt">$0</p>
-      <p class="usd-eq" id="pool-usd" style="margin:-2px 0 10px;"></p>
+      <p class="usd-eq" id="pool-usd" style="margin:-2px 0 8px;"></p>
+      <p class="pool-breakdown" id="pool-breakdown" style="display:none;"></p>
       <p class="hint">Plata guardada que todavía no elegiste a qué meta va.</p>
       <button class="btn btn-ghost btn-sm" id="btn-asignar-pozo">Asignar a una meta →</button>
     </div>
@@ -632,7 +638,7 @@
     return total/meses;
   }
 
-  let state = { pozo:0, metas:[], rate:null };
+  let state = { pozo:0, pozoUSD:0, metas:[], rate:null };
   let movimientos = [];
   let movLimit = 8;
   const curFields = { "in-monto":"ARS", "meta-objetivo":"ARS", "as-monto":"ARS" };
@@ -749,7 +755,7 @@
         if(r.falta <= 0){ doneAt[r.id] = month; idx++; }
       }
     }
-    apply(state.pozo);
+    apply(totalPoolARS());
     while(idx < remaining.length && monthly > 0 && month < maxMonths){
       month++;
       apply(monthly);
@@ -777,12 +783,25 @@
     $("#status-txt").textContent = txt;
   }
 
+  function totalPoolARS(){
+    return (state.pozo||0) + (state.pozoUSD||0) * (state.rate||0);
+  }
+
   // ===== render =====
   function render(){
-    $("#pool-amt").textContent = money(state.pozo);
-    $("#pool-usd").textContent = usdTxt(state.pozo);
+    const poolARS = totalPoolARS();
+    $("#pool-amt").textContent = money(poolARS);
+    $("#pool-usd").textContent = usdTxt(poolARS);
+    const bd = $("#pool-breakdown");
+    if((state.pozoUSD||0) > 0){
+      bd.style.display = "block";
+      const usdFmt = state.pozoUSD.toLocaleString("en-US", {maximumFractionDigits: state.pozoUSD>=100?0:2});
+      bd.innerHTML = `De eso, <b>US$ ${usdFmt}</b>${state.rate ? ` (≈ ${money(state.pozoUSD*state.rate)})` : ""} están guardados en dólares, y <b>${money(state.pozo)}</b> en pesos.`;
+    } else {
+      bd.style.display = "none";
+    }
     const asignadoTotal = state.metas.reduce((s,m)=>s + (m.asignado||0), 0);
-    const total = state.pozo + asignadoTotal;
+    const total = poolARS + asignadoTotal;
     const objetivoTotalRaw = state.metas.reduce((s,m)=>s + (m.objetivo||0), 0);
     const objetivoTotal = objetivoTotalRaw || 1;
     const pct = Math.min(100, Math.round((asignadoTotal/objetivoTotal)*100));
@@ -941,7 +960,10 @@
   }
 
   function movDescHtml(mv){
-    if(mv.tipo === "ingreso") return `Ingreso al pozo${mv.nota? " · "+escapeHtml(mv.nota):""}`;
+    if(mv.tipo === "ingreso"){
+      const usdTag = mv.moneda === "USD" ? ` <b>(US$ ${(mv.montoOriginal||0).toLocaleString("en-US",{maximumFractionDigits:2})})</b>` : "";
+      return `Ingreso al pozo${usdTag}${mv.nota? " · "+escapeHtml(mv.nota):""}`;
+    }
     if(mv.tipo === "asignacion") return `Asignado a <b>${escapeHtml(mv.metaNombre||"meta")}</b>${mv.nota? " · "+escapeHtml(mv.nota):""}`;
     if(mv.tipo === "gasto") return `Comprado: <b>${escapeHtml(mv.metaNombre||"meta")}</b>`;
     if(mv.tipo === "ajuste") return `Ajuste${mv.nota? " · "+escapeHtml(mv.nota):""}`;
@@ -1093,10 +1115,11 @@
     if(doc.exists){
       const d = doc.data();
       state.pozo = d.pozo || 0;
+      state.pozoUSD = d.pozoUSD || 0;
       state.metas = d.metas || [];
     } else {
-      poolRef.set({pozo:0, metas:[], creado:firebase.firestore.FieldValue.serverTimestamp()});
-      state = {pozo:0, metas:[]};
+      poolRef.set({pozo:0, pozoUSD:0, metas:[], creado:firebase.firestore.FieldValue.serverTimestamp()});
+      state = {pozo:0, pozoUSD:0, metas:[]};
     }
     render();
     setStatus(true, "Sincronizado");
@@ -1116,16 +1139,23 @@
 
   // ===== mutations =====
   function saveState(){
-    return poolRef.set({pozo: state.pozo, metas: state.metas, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+    return poolRef.set({pozo: state.pozo, pozoUSD: state.pozoUSD||0, metas: state.metas, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
   }
   function addMovimiento(mv){
     return movRef.add({...mv, fecha: firebase.firestore.FieldValue.serverTimestamp()});
   }
 
-  async function doIngreso(monto, nota){
-    state.pozo += monto;
+  async function doIngreso(rawMonto, moneda, nota){
+    let montoARS;
+    if(moneda === "USD"){
+      state.pozoUSD = (state.pozoUSD||0) + rawMonto;
+      montoARS = state.rate ? rawMonto*state.rate : rawMonto;
+    } else {
+      state.pozo += rawMonto;
+      montoARS = rawMonto;
+    }
     await saveState();
-    await addMovimiento({tipo:"ingreso", monto, nota: nota||""});
+    await addMovimiento({tipo:"ingreso", monto:montoARS, nota: nota||"", moneda, montoOriginal: rawMonto});
   }
 
   async function doNuevaMeta(id, nombre, emoji, objetivo, fechaObjetivo, orden){
@@ -1143,10 +1173,14 @@
   async function doAsignar(metaId, monto, nota){
     const m = state.metas.find(x=>x.id===metaId);
     if(!m) return;
-    state.pozo -= monto;
+    const fromPesos = Math.min(monto, state.pozo);
+    const restanteARS = monto - fromPesos;
+    const fromUSD = (restanteARS > 0 && state.rate) ? restanteARS/state.rate : 0;
+    state.pozo -= fromPesos;
+    state.pozoUSD = Math.max(0, (state.pozoUSD||0) - fromUSD);
     m.asignado = (m.asignado||0) + monto;
     await saveState();
-    await addMovimiento({tipo:"asignacion", monto, metaId, metaNombre:m.nombre, nota: nota||""});
+    await addMovimiento({tipo:"asignacion", monto, metaId, metaNombre:m.nombre, nota: nota||"", fromPesos, fromUSD});
   }
 
   async function doComprar(metaId){
@@ -1175,10 +1209,19 @@
     const mv = movimientos.find(x=>x.id===id);
     if(!mv) return;
     if(mv.tipo === "ingreso"){
-      state.pozo -= mv.monto;
+      if(mv.moneda === "USD"){
+        state.pozoUSD = Math.max(0, (state.pozoUSD||0) - (mv.montoOriginal||0));
+      } else {
+        state.pozo -= mv.monto;
+      }
     } else if(mv.tipo === "asignacion"){
       const m = state.metas.find(x=>x.id===mv.metaId);
-      state.pozo += mv.monto;
+      if(mv.fromPesos != null || mv.fromUSD != null){
+        state.pozo += (mv.fromPesos||0);
+        state.pozoUSD = (state.pozoUSD||0) + (mv.fromUSD||0);
+      } else {
+        state.pozo += mv.monto; // movimientos viejos, antes de trackear por moneda
+      }
       if(m) m.asignado = Math.max(0, (m.asignado||0) - mv.monto);
     } else if(mv.tipo === "gasto"){
       const m = state.metas.find(x=>x.id===mv.metaId);
@@ -1193,6 +1236,7 @@
     const data = {
       exportado: new Date().toISOString(),
       pozo: state.pozo,
+      pozoUSD: state.pozoUSD||0,
       metas: state.metas,
       movimientos: movimientos.map(mv => ({...mv, fecha: mv.fecha ? tsToDate(mv.fecha).toISOString() : null}))
     };
@@ -1286,11 +1330,11 @@
     const raw = parseAmount($("#in-monto").value);
     const errEl = $("#in-err");
     if(!(raw > 0)){ errEl.textContent = "Poné un monto mayor a cero."; errEl.classList.add("show"); return; }
-    const monto = toARS(raw, "in-monto");
-    if(monto === null){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos o esperá unos segundos."; errEl.classList.add("show"); return; }
+    const cur = curFields["in-monto"];
+    if(cur === "USD" && !state.rate){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos o esperá unos segundos."; errEl.classList.add("show"); return; }
     errEl.classList.remove("show");
     $("#in-save").disabled = true;
-    await doIngreso(monto, $("#in-nota").value.trim());
+    await doIngreso(raw, cur, $("#in-nota").value.trim());
     $("#in-save").disabled = false;
     closeModal("#ov-ingreso");
   });
@@ -1414,13 +1458,13 @@
     }
     $("#as-monto").value = "";
     $("#as-nota").value = "";
-    $("#as-max").textContent = money(state.pozo);
+    $("#as-max").textContent = money(totalPoolARS());
     $("#as-err").classList.remove("show");
     resetCurrencyToggle("as-monto");
     openModal("#ov-asignar");
   }
   $("#btn-asignar-pozo").addEventListener("click", ()=> openAsignarModal());
-  $("#as-max").addEventListener("click", ()=> { curFields["as-monto"]="ARS"; document.querySelector('.cur-toggle[data-field="as-monto"] .cur-btn[data-cur="ARS"]').click(); setFormattedAmount("as-monto", state.pozo); updateConvHint("as-monto"); });
+  $("#as-max").addEventListener("click", ()=> { curFields["as-monto"]="ARS"; document.querySelector('.cur-toggle[data-field="as-monto"] .cur-btn[data-cur="ARS"]').click(); setFormattedAmount("as-monto", totalPoolARS()); updateConvHint("as-monto"); });
   $("#as-save").addEventListener("click", async ()=>{
     const metaId = $("#as-meta").value;
     const raw = parseAmount($("#as-monto").value);
@@ -1428,7 +1472,7 @@
     if(!metaId || !(raw > 0)){ errEl.textContent = "Revisá el monto: no puede superar el pozo disponible."; errEl.classList.add("show"); return; }
     const monto = toARS(raw, "as-monto");
     if(monto === null){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos."; errEl.classList.add("show"); return; }
-    if(monto > state.pozo){ errEl.textContent = "Ese monto supera el pozo disponible."; errEl.classList.add("show"); return; }
+    if(monto > totalPoolARS()){ errEl.textContent = "Ese monto supera el pozo disponible."; errEl.classList.add("show"); return; }
     errEl.classList.remove("show");
     $("#as-save").disabled = true;
     await doAsignar(metaId, monto, $("#as-nota").value.trim());
