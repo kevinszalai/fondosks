@@ -152,10 +152,14 @@
     background:var(--moss); color:#fff; padding:3px 7px; border-radius:99px; letter-spacing:.03em;
   }
   .env .drag-handle{
-    position:absolute; top:16px; left:14px; font-size:13px; color:var(--ink-faint);
-    cursor:grab; touch-action:none; padding:4px 5px; line-height:1; user-select:none;
+    position:absolute; top:12px; left:10px; font-size:18px; color:var(--ink-faint);
+    cursor:grab; touch-action:none; padding:8px; line-height:1; user-select:none;
+    border-radius:8px; z-index:2;
   }
-  .env.dragging{opacity:.45; box-shadow:none;}
+  .env .drag-handle:active{cursor:grabbing; background:var(--brass-light); color:var(--brass-dark);}
+  .env.dragging{opacity:.55; box-shadow:0 12px 28px -8px rgba(34,32,27,.35); transform:scale(1.02); z-index:5; cursor:grabbing;}
+  body.drag-active{cursor:grabbing;}
+  body.drag-active, body.drag-active *{user-select:none !important;}
   .env .falta-txt{font-size:11px; color:var(--ink-soft); margin:-8px 0 10px; line-height:1.4;}
   .env .fecha-obj{font-size:11px; color:var(--brass-dark); font-family:'IBM Plex Mono',monospace; margin:-6px 0 10px;}
   .env-new{
@@ -180,15 +184,19 @@
   .ledger-row .monto.pos{color:var(--moss-dark);}
   .ledger-row .monto.neg{color:var(--ink-soft);}
   .ledger-row .del{
-    background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;
-    opacity:0; transition:opacity .15s;
+    background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:4px 5px;flex-shrink:0;
   }
-  .ledger-row:hover .del{opacity:1;}
   .ledger-row .del:hover{color:var(--rust);}
+  .ledger-row .row-actions{display:flex; gap:2px; flex-shrink:0;}
   .ledger-empty{padding:30px 18px; text-align:center; color:var(--ink-faint); font-size:13.5px;}
   .ledger-more{
     display:block; width:100%; text-align:center; padding:12px; background:var(--bg-soft); border:none;
     border-top:1px solid var(--line-soft); color:var(--brass-dark); font-weight:600; font-size:12.5px; cursor:pointer;
+  }
+  .ledger-filters{display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+  .ledger-filters select{
+    border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 10px;
+    font-family:'IBM Plex Sans',sans-serif; font-size:12.5px; color:var(--ink-soft); flex:1; min-width:120px;
   }
 
   footer.status{
@@ -360,6 +368,23 @@
   </section>
 
   <section>
+    <button class="collapsible-toggle" id="calc-toggle">
+      <span>🧮 Calculadora — ¿cuándo llegaría?</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="collapsible" id="calc-body">
+      <div class="card" style="padding:18px 20px; margin-top:18px;">
+        <div class="field" style="margin-bottom:6px;">
+          <label>¿Cuánto pensás ahorrar por mes, en promedio?</label>
+          <input type="text" inputmode="numeric" class="amt-input" id="calc-monto" placeholder="0" autocomplete="off">
+        </div>
+        <p class="modal-sub" style="margin-bottom:14px;">Usa el pozo de hoy + lo que ahorres cada mes, repartido en el orden de prioridad de tus metas (el que armaste arrastrando las tarjetas).</p>
+        <div id="calc-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <button class="collapsible-toggle" id="stats-toggle">
       <span>📊 Ver estadísticas</span>
       <span class="chev">▾</span>
@@ -377,6 +402,18 @@
   <section>
     <div class="sec-head">
       <h2>Movimientos</h2>
+    </div>
+    <div class="ledger-filters">
+      <select id="filtro-tipo">
+        <option value="">Todos los tipos</option>
+        <option value="ingreso">Ingresos</option>
+        <option value="asignacion">Asignaciones</option>
+        <option value="gasto">Compras</option>
+        <option value="ajuste">Ajustes</option>
+      </select>
+      <select id="filtro-meta">
+        <option value="">Todas las metas</option>
+      </select>
     </div>
     <div class="ledger" id="ledger"></div>
   </section>
@@ -502,6 +539,22 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close>Cancelar</button>
       <button class="btn btn-brass" id="as-save">Asignar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: editar nota -->
+<div class="overlay" id="ov-editnota">
+  <div class="modal">
+    <h3>Editar nota</h3>
+    <p class="modal-sub">No cambia el monto, solo la nota de este movimiento.</p>
+    <div class="field">
+      <label>Nota</label>
+      <input type="text" id="editnota-input" placeholder="Ej: presupuesto Vidriería López">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-brass" id="editnota-save">Guardar</button>
     </div>
   </div>
 </div>
@@ -664,6 +717,53 @@
   }
   setupCollapsible("stats-toggle", "stats-body");
   setupCollapsible("meta-more-toggle", "meta-more-body");
+  setupCollapsible("calc-toggle", "calc-body");
+
+  // ===== calculadora: ¿cuándo llegaría? =====
+  function renderCalc(){
+    const resEl = $("#calc-results");
+    if(!resEl) return;
+    const monthly = parseAmount($("#calc-monto").value) || 0;
+    const activas = state.metas.filter(m=>!m.comprada).sort((a,b)=>(a.orden||0)-(b.orden||0));
+    if(!activas.length){
+      resEl.innerHTML = `<p class="modal-sub" style="margin:0;">Todavía no tenés metas activas para simular.</p>`;
+      return;
+    }
+    const remaining = activas.map(m=>({id:m.id, nombre:m.nombre, emoji:m.emoji, falta: Math.max(0,(m.objetivo||0)-(m.asignado||0))}));
+    const doneAt = {};
+    let idx = 0, month = 0;
+    const maxMonths = 600;
+    function apply(amount){
+      while(amount > 0 && idx < remaining.length){
+        const r = remaining[idx];
+        if(r.falta <= 0){ idx++; continue; }
+        const take = Math.min(amount, r.falta);
+        r.falta -= take; amount -= take;
+        if(r.falta <= 0){ doneAt[r.id] = month; idx++; }
+      }
+    }
+    apply(state.pozo);
+    while(idx < remaining.length && monthly > 0 && month < maxMonths){
+      month++;
+      apply(monthly);
+    }
+    const today = new Date();
+    resEl.innerHTML = remaining.map((r,i)=>{
+      const orig = activas[i];
+      const mesesFalta = doneAt[r.id];
+      let txt;
+      if(mesesFalta === undefined){
+        txt = monthly > 0 ? `no llegarías en los próximos ${Math.round(maxMonths/12)} años a este ritmo` : `cargá un monto mensual para estimar`;
+      } else if(mesesFalta === 0){
+        txt = `ya cubierta con el pozo de hoy`;
+      } else {
+        const fecha = new Date(today.getFullYear(), today.getMonth()+mesesFalta, 1);
+        txt = `lista en ~${mesesFalta} ${mesesFalta===1?"mes":"meses"} (${fecha.toLocaleDateString("es-AR",{month:"short",year:"numeric"})})`;
+      }
+      return `<div class="month-row"><span class="mes">${orig.emoji||"🏠"} ${escapeHtml(orig.nombre)}</span><span style="flex:1; text-align:right; font-size:12.5px; color:var(--ink-soft);">${txt}</span></div>`;
+    }).join("");
+  }
+  $("#calc-monto").addEventListener("input", ()=>{ formatAmountField($("#calc-monto")); renderCalc(); });
 
   function setStatus(ok, txt){
     $("#status-dot").className = "dot " + (ok===true?"ok":ok===false?"err":"");
@@ -689,10 +789,12 @@
     $("#stat-bar").style.width = pct + "%";
 
     state.avgIngreso = avgMonthlyIngreso();
+    renderFiltroMetaOptions();
     renderMetas();
     renderLedger();
     renderChart();
     renderMonthly();
+    renderCalc();
   }
 
   function metaEnvHtml(m){
@@ -781,23 +883,39 @@
     if(!card) return;
     dragEl = card;
     dragEl.classList.add("dragging");
+    document.body.classList.add("drag-active");
+    try{ e.target.setPointerCapture(e.pointerId); }catch(err){}
     document.addEventListener("pointermove", onDragMove);
     document.addEventListener("pointerup", onDragEnd);
+    document.addEventListener("pointercancel", onDragEnd);
     e.preventDefault();
   }
   function onDragMove(e){
     if(!dragEl) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const over = el && el.closest && el.closest(".env[data-id]");
-    if(over && over !== dragEl && over.parentElement === dragEl.parentElement){
-      const rect = over.getBoundingClientRect();
-      const before = (e.clientY - rect.top) < rect.height/2;
-      over.parentElement.insertBefore(dragEl, before ? over : over.nextSibling);
+    e.preventDefault();
+    const container = dragEl.parentElement;
+    if(!container) return;
+    const cards = Array.from(container.querySelectorAll('.env[data-id]')).filter(c=>c!==dragEl);
+    let closest = null, closestDist = Infinity, before = true;
+    cards.forEach(c=>{
+      const r = c.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const dist = Math.hypot(e.clientX-cx, e.clientY-cy);
+      if(dist < closestDist){
+        closestDist = dist;
+        closest = c;
+        before = e.clientY < cy || (Math.abs(e.clientY-cy) < r.height*0.35 && e.clientX < cx);
+      }
+    });
+    if(closest){
+      container.insertBefore(dragEl, before ? closest : closest.nextSibling);
     }
   }
   async function onDragEnd(){
     document.removeEventListener("pointermove", onDragMove);
     document.removeEventListener("pointerup", onDragEnd);
+    document.removeEventListener("pointercancel", onDragEnd);
+    document.body.classList.remove("drag-active");
     if(!dragEl){ return; }
     dragEl.classList.remove("dragging");
     const ids = $$('#metas-grid .env[data-id]').map(el=>el.dataset.id);
@@ -818,14 +936,28 @@
     return mv.tipo;
   }
 
+  let filtroTipo = "", filtroMeta = "";
+  function renderFiltroMetaOptions(){
+    const sel = $("#filtro-meta");
+    if(!sel) return;
+    const current = sel.value;
+    sel.innerHTML = `<option value="">Todas las metas</option>` +
+      state.metas.map(m=> `<option value="${m.id}">${m.emoji||"🏠"} ${escapeHtml(m.nombre)}</option>`).join("");
+    if(current && state.metas.some(m=>m.id===current)) sel.value = current;
+  }
+
   function renderLedger(){
     const el = $("#ledger");
-    if(!movimientos.length){
-      el.innerHTML = `<div class="ledger-empty">Todavía no hay movimientos. Registrá un ingreso para arrancar.</div>`;
+    let filtrados = movimientos;
+    if(filtroTipo) filtrados = filtrados.filter(mv=>mv.tipo===filtroTipo);
+    if(filtroMeta) filtrados = filtrados.filter(mv=>mv.metaId===filtroMeta);
+    if(!filtrados.length){
+      el.innerHTML = `<div class="ledger-empty">${movimientos.length ? "No hay movimientos con ese filtro." : "Todavía no hay movimientos. Registrá un ingreso para arrancar."}</div>`;
       return;
     }
-    const visible = movimientos.slice(0, movLimit);
+    const visible = filtrados.slice(0, movLimit);
     const isNeg = (mv) => mv.tipo === "asignacion" || mv.tipo === "gasto";
+    const editable = (mv) => mv.tipo === "ingreso" || mv.tipo === "asignacion" || mv.tipo === "ajuste";
     el.innerHTML = visible.map(mv => `
       <div class="ledger-row">
         <span class="fecha">${fmtDate(mv.fecha)}</span>
@@ -834,14 +966,37 @@
           <span class="monto ${isNeg(mv)?'neg':'pos'}">${isNeg(mv)?'−':'+'}${money(mv.monto)}</span>
           <span class="usd-eq">${usdTxt(mv.monto)}</span>
         </div>
-        <button class="del" data-mid="${mv.id}" title="Eliminar movimiento">✕</button>
+        <div class="row-actions">
+          ${editable(mv) ? `<button class="del" data-mid="${mv.id}" data-act="edit-nota" title="Editar nota">✎</button>` : ""}
+          <button class="del" data-mid="${mv.id}" data-act="del-mov" title="Eliminar movimiento">✕</button>
+        </div>
       </div>`).join("") +
-      (movimientos.length > movLimit ? `<button class="ledger-more" id="ledger-more">Ver ${Math.min(movimientos.length-movLimit,20)} más</button>` : "");
+      (filtrados.length > movLimit ? `<button class="ledger-more" id="ledger-more">Ver ${Math.min(filtrados.length-movLimit,20)} más</button>` : "");
 
-    $$(".del").forEach(b=> b.addEventListener("click", ()=> confirmEliminarMov(b.dataset.mid)));
+    $$('.del[data-act="del-mov"]').forEach(b=> b.addEventListener("click", ()=> confirmEliminarMov(b.dataset.mid)));
+    $$('.del[data-act="edit-nota"]').forEach(b=> b.addEventListener("click", ()=> openEditNota(b.dataset.mid)));
     const more = $("#ledger-more");
     if(more) more.addEventListener("click", ()=>{ movLimit += 20; renderLedger(); });
   }
+  $("#filtro-tipo").addEventListener("change", ()=>{ filtroTipo = $("#filtro-tipo").value; movLimit = 8; renderLedger(); });
+  $("#filtro-meta").addEventListener("change", ()=>{ filtroMeta = $("#filtro-meta").value; movLimit = 8; renderLedger(); });
+
+  let editingNotaId = null;
+  function openEditNota(id){
+    const mv = movimientos.find(x=>x.id===id);
+    if(!mv) return;
+    editingNotaId = id;
+    $("#editnota-input").value = mv.nota || "";
+    openModal("#ov-editnota");
+    setTimeout(()=>$("#editnota-input").focus(), 250);
+  }
+  $("#editnota-save").addEventListener("click", async ()=>{
+    if(!editingNotaId) return;
+    $("#editnota-save").disabled = true;
+    await movRef.doc(editingNotaId).update({nota: $("#editnota-input").value.trim()});
+    $("#editnota-save").disabled = false;
+    closeModal("#ov-editnota");
+  });
 
   function escapeHtml(s){
     return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1081,12 +1236,32 @@
   }
 
   // ===== modals: generic =====
-  function openModal(id){ $(id).classList.add("show"); }
+  let overlaySnapshots = {};
+  function snapshotOverlay(ov){
+    const fields = ov.querySelectorAll('input[type=text], input[type=number], input[type=date], textarea');
+    const snap = {};
+    fields.forEach(f=> { if(f.id) snap[f.id] = f.value; });
+    const fileInput = ov.querySelector('input[type=file]');
+    if(fileInput) snap.__file = fileInput.files.length;
+    return snap;
+  }
+  function openModal(id){
+    const ov = $(id);
+    ov.classList.add("show");
+    overlaySnapshots[ov.id] = JSON.stringify(snapshotOverlay(ov));
+  }
   function closeModal(id){ $(id).classList.remove("show"); }
+  function overlayHasChanges(ov){
+    return overlaySnapshots[ov.id] !== JSON.stringify(snapshotOverlay(ov));
+  }
+  function requestClose(ov){
+    if(overlayHasChanges(ov) && !confirm("Vas a perder lo que cambiaste acá. ¿Cerrar igual?")) return;
+    closeModal("#"+ov.id);
+  }
   $$("[data-close]").forEach(b=> b.addEventListener("click", (e)=>{
-    closeModal("#" + e.target.closest(".overlay").id);
+    requestClose(e.target.closest(".overlay"));
   }));
-  $$(".overlay").forEach(ov=> ov.addEventListener("click", (e)=>{ if(e.target===ov) closeModal("#"+ov.id); }));
+  $$(".overlay").forEach(ov=> ov.addEventListener("click", (e)=>{ if(e.target===ov) requestClose(ov); }));
 
   // ---- ingreso modal ----
   $("#btn-ingreso").addEventListener("click", ()=>{
