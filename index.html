@@ -92,10 +92,18 @@
   .pool-card .amt{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(30px,5vw,40px); margin:6px 0 4px; letter-spacing:-.02em;}
   .pool-card .hint{font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
   .pool-breakdown{
-    font-size:12px; color:var(--ink-soft); margin:0 0 12px; padding:9px 11px;
-    background:rgba(169,118,47,.08); border:1px solid var(--line-soft); border-radius:9px; line-height:1.5;
+    margin:0 0 12px; padding:4px 12px; background:rgba(169,118,47,.08);
+    border:1px solid var(--line-soft); border-radius:9px;
   }
-  .pool-breakdown b{color:var(--brass-dark); font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .pool-bd-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:9px 0; font-size:12.5px; color:var(--ink-soft);
+  }
+  .pool-bd-row + .pool-bd-row{border-top:1px dashed var(--line-soft);}
+  .pool-bd-lbl{display:flex; align-items:center; gap:6px; font-weight:600;}
+  .pool-bd-val{text-align:right;}
+  .pool-bd-val .n{display:block; font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--brass-dark); font-size:13.5px;}
+  .pool-bd-val .sub{display:block; font-size:10.5px; color:var(--ink-faint); font-weight:500; margin-top:1px;}
 
   .stats-card{padding:20px 24px; display:flex; flex-direction:column; justify-content:center; gap:14px;}
   .stat-line{display:flex; align-items:center; justify-content:space-between; gap:10px;}
@@ -347,7 +355,7 @@
       <p class="lbl">Pozo sin asignar</p>
       <p class="amt mono" id="pool-amt">$0</p>
       <p class="usd-eq" id="pool-usd" style="margin:-2px 0 8px;"></p>
-      <p class="pool-breakdown" id="pool-breakdown" style="display:none;"></p>
+      <div class="pool-breakdown" id="pool-breakdown" style="display:none;"></div>
       <p class="hint">Plata guardada que todavía no elegiste a qué meta va.</p>
       <button class="btn btn-ghost btn-sm" id="btn-asignar-pozo">Asignar a una meta →</button>
     </div>
@@ -559,12 +567,22 @@
 <!-- MODAL: editar nota -->
 <div class="overlay" id="ov-editnota">
   <div class="modal">
-    <h3>Editar nota</h3>
-    <p class="modal-sub">No cambia el monto, solo la nota de este movimiento.</p>
+    <h3 id="editnota-title">Editar nota</h3>
+    <p class="modal-sub" id="editnota-sub">No cambia el monto, solo la nota de este movimiento.</p>
+    <div class="field" id="editnota-monto-field" style="display:none;">
+      <label>Monto</label>
+      <input type="text" inputmode="numeric" class="amt-input" id="editnota-monto" placeholder="0" autocomplete="off">
+      <div class="cur-toggle" data-field="editnota-monto">
+        <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
+        <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
+      </div>
+      <p class="conv-hint" id="editnota-monto-conv"></p>
+    </div>
     <div class="field">
       <label>Nota</label>
       <input type="text" id="editnota-input" placeholder="Ej: presupuesto Vidriería López">
     </div>
+    <p class="err-msg" id="editnota-err">Poné un monto mayor a cero.</p>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close>Cancelar</button>
       <button class="btn btn-brass" id="editnota-save">Guardar</button>
@@ -641,7 +659,7 @@
   let state = { pozo:0, pozoUSD:0, metas:[], rate:null };
   let movimientos = [];
   let movLimit = 8;
-  const curFields = { "in-monto":"ARS", "meta-objetivo":"ARS", "as-monto":"ARS" };
+  const curFields = { "in-monto":"ARS", "meta-objetivo":"ARS", "as-monto":"ARS", "editnota-monto":"ARS" };
 
   // ===== cotización dólar (blue, dolarapi.com — sin API key) =====
   async function fetchRate(){
@@ -655,7 +673,7 @@
     }
     renderRatePill();
     render();
-    ["in-monto","meta-objetivo","as-monto"].forEach(updateConvHint);
+    ["in-monto","meta-objetivo","as-monto","editnota-monto"].forEach(updateConvHint);
   }
   function renderRatePill(){
     $("#rate-pill").textContent = state.rate
@@ -716,7 +734,7 @@
       updateConvHint(fieldId);
     });
   }
-  ["in-monto","meta-objetivo","as-monto"].forEach(setupCurrencyToggle);
+  ["in-monto","meta-objetivo","as-monto","editnota-monto"].forEach(setupCurrencyToggle);
   fetchRate();
   setInterval(fetchRate, 5*60*1000);
 
@@ -796,7 +814,15 @@
     if((state.pozoUSD||0) > 0){
       bd.style.display = "block";
       const usdFmt = state.pozoUSD.toLocaleString("en-US", {maximumFractionDigits: state.pozoUSD>=100?0:2});
-      bd.innerHTML = `De eso, <b>US$ ${usdFmt}</b>${state.rate ? ` (≈ ${money(state.pozoUSD*state.rate)})` : ""} están guardados en dólares, y <b>${money(state.pozo)}</b> en pesos.`;
+      bd.innerHTML = `
+        <div class="pool-bd-row">
+          <span class="pool-bd-lbl">💵 En dólares</span>
+          <span class="pool-bd-val"><span class="n">US$ ${usdFmt}</span>${state.rate ? `<span class="sub">≈ ${money(state.pozoUSD*state.rate)}</span>` : ""}</span>
+        </div>
+        <div class="pool-bd-row">
+          <span class="pool-bd-lbl">🪙 En pesos</span>
+          <span class="pool-bd-val"><span class="n">${money(state.pozo)}</span></span>
+        </div>`;
     } else {
       bd.style.display = "none";
     }
@@ -1001,7 +1027,7 @@
           <span class="usd-eq">${usdTxt(mv.monto)}</span>
         </div>
         <div class="row-actions">
-          ${editable(mv) ? `<button class="del" data-mid="${mv.id}" data-act="edit-nota" title="Editar nota">✎</button>` : ""}
+          ${editable(mv) ? `<button class="del" data-mid="${mv.id}" data-act="edit-nota" title="${mv.tipo==='ingreso'?'Editar ingreso':'Editar nota'}">✎</button>` : ""}
           <button class="del" data-mid="${mv.id}" data-act="del-mov" title="Eliminar movimiento">✕</button>
         </div>
       </div>`).join("") +
@@ -1021,14 +1047,50 @@
     if(!mv) return;
     editingNotaId = id;
     $("#editnota-input").value = mv.nota || "";
+    $("#editnota-err").classList.remove("show");
+    const isIngreso = mv.tipo === "ingreso";
+    $("#editnota-monto-field").style.display = isIngreso ? "block" : "none";
+    $("#editnota-title").textContent = isIngreso ? "Editar ingreso" : "Editar nota";
+    $("#editnota-sub").textContent = isIngreso ? "Podés cambiar el monto, la moneda o la nota de este ingreso." : "No cambia el monto, solo la nota de este movimiento.";
+    if(isIngreso){
+      const cur = mv.moneda === "USD" ? "USD" : "ARS";
+      curFields["editnota-monto"] = cur;
+      document.querySelectorAll('.cur-toggle[data-field="editnota-monto"] .cur-btn').forEach(b=> b.classList.toggle("sel", b.dataset.cur===cur));
+      setFormattedAmount("editnota-monto", cur === "USD" ? (mv.montoOriginal||0) : mv.monto);
+      updateConvHint("editnota-monto");
+    }
     openModal("#ov-editnota");
     setTimeout(()=>$("#editnota-input").focus(), 250);
   }
   $("#editnota-save").addEventListener("click", async ()=>{
     if(!editingNotaId) return;
-    $("#editnota-save").disabled = true;
-    await movRef.doc(editingNotaId).update({nota: $("#editnota-input").value.trim()});
-    $("#editnota-save").disabled = false;
+    const mv = movimientos.find(x=>x.id===editingNotaId);
+    if(!mv) return;
+    const nota = $("#editnota-input").value.trim();
+    const errEl = $("#editnota-err");
+    if(mv.tipo === "ingreso"){
+      const raw = parseAmount($("#editnota-monto").value);
+      if(!(raw > 0)){ errEl.textContent = "Poné un monto mayor a cero."; errEl.classList.add("show"); return; }
+      const cur = curFields["editnota-monto"];
+      if(cur === "USD" && !state.rate){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos."; errEl.classList.add("show"); return; }
+      errEl.classList.remove("show");
+      $("#editnota-save").disabled = true;
+      // revertir el efecto viejo de este ingreso en el pozo
+      if(mv.moneda === "USD"){ state.pozoUSD = Math.max(0, (state.pozoUSD||0) - (mv.montoOriginal||0)); }
+      else { state.pozo -= mv.monto; }
+      // aplicar el nuevo monto/moneda
+      let montoARS;
+      if(cur === "USD"){ state.pozoUSD = (state.pozoUSD||0) + raw; montoARS = state.rate ? raw*state.rate : raw; }
+      else { state.pozo += raw; montoARS = raw; }
+      await saveState();
+      await movRef.doc(editingNotaId).update({monto: montoARS, moneda: cur, montoOriginal: raw, nota});
+      $("#editnota-save").disabled = false;
+    } else {
+      errEl.classList.remove("show");
+      $("#editnota-save").disabled = true;
+      await movRef.doc(editingNotaId).update({nota});
+      $("#editnota-save").disabled = false;
+    }
     closeModal("#ov-editnota");
   });
 
