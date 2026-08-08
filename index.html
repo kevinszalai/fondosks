@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fondo del depto</title>
+<meta name="theme-color" content="#EDE8DB">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EDE8DB;
+    --bg-soft:#F5F1E6;
+    --surface:#FFFDF8;
+    --ink:#22201B;
+    --ink-soft:#665F50;
+    --ink-faint:#948C79;
+    --line:#DBD4BF;
+    --line-soft:#E7E1D0;
+    --brass:#A9762F;
+    --brass-dark:#7C5A22;
+    --brass-light:#EFE0C4;
+    --moss:#4B6455;
+    --moss-dark:#374C3F;
+    --moss-light:#DCE5DB;
+    --rust:#B4432E;
+    --rust-light:#F3DCD6;
+    --shadow: 0 1px 2px rgba(34,32,27,.06), 0 8px 24px -12px rgba(34,32,27,.18);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 400px at 10% -10%, rgba(169,118,47,.07), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(75,100,85,.06), transparent 55%);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:64px;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .display{font-family:'Fraunces', serif;}
+
+  /* ---------- layout shell ---------- */
+  .wrap{max-width:1040px; margin:0 auto; padding:28px 20px 0;}
+  header.top{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    padding-bottom:22px; margin-bottom:26px;
+    border-bottom:1px solid var(--line);
+  }
+  .top .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brass-dark); margin:0 0 6px;
+  }
+  .top h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:clamp(28px,4vw,38px);
+    margin:0; letter-spacing:-.01em; line-height:1.05;
+  }
+  .top .sub{color:var(--ink-soft); font-size:14px; margin-top:6px;}
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600; font-size:14px; border-radius:10px; padding:11px 18px;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-brass{background:var(--brass); color:#fff; box-shadow:0 2px 0 var(--brass-dark);}
+  .btn-brass:hover{background:#B8823A;}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink-faint); color:var(--ink);}
+  .btn-sm{padding:7px 12px; font-size:12.5px; border-radius:8px;}
+  .btn-block{width:100%; justify-content:center;}
+  .btn[disabled]{opacity:.4; cursor:not-allowed;}
+
+  /* ---------- pool summary ---------- */
+  .pool-row{
+    display:grid; grid-template-columns: 1.1fr 1.5fr; gap:16px; margin-bottom:34px;
+  }
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .pool-card{
+    padding:22px 24px; position:relative; overflow:hidden;
+    background:linear-gradient(155deg, var(--surface) 60%, var(--brass-light) 180%);
+  }
+  .pool-card .lbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass-dark); font-weight:600; font-family:'IBM Plex Mono',monospace;}
+  .pool-card .amt{font-family:'Fraunces',serif; font-weight:600; font-size:clamp(30px,5vw,40px); margin:6px 0 4px; letter-spacing:-.02em;}
+  .pool-card .hint{font-size:12.5px; color:var(--ink-soft); margin-bottom:16px;}
+
+  .stats-card{padding:20px 24px; display:flex; flex-direction:column; justify-content:center; gap:14px;}
+  .stat-line{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .stat-line .k{font-size:13px; color:var(--ink-soft);}
+  .stat-line .v{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:16px;}
+  .bar{height:8px; border-radius:99px; background:var(--line-soft); overflow:hidden; margin-top:2px;}
+  .bar > i{display:block; height:100%; background:linear-gradient(90deg,var(--brass),var(--moss)); border-radius:99px; transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+  /* ---------- section headers ---------- */
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; gap:10px;}
+  .sec-head h2{font-family:'Fraunces',serif; font-weight:600; font-size:20px; margin:0;}
+  .sec-head .count{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- meta grid & envelope cards ---------- */
+  .metas-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:38px;
+  }
+  .env{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    clip-path: polygon(0 16px, 50% 0, 100% 16px, 100% 100%, 0% 100%);
+    padding:26px 18px 18px;
+    box-shadow:var(--shadow);
+    opacity:0; transform:translateY(10px);
+    animation: rise .5s ease forwards;
+  }
+  .metas-grid .env:nth-child(1){animation-delay:.02s}
+  .metas-grid .env:nth-child(2){animation-delay:.07s}
+  .metas-grid .env:nth-child(3){animation-delay:.12s}
+  .metas-grid .env:nth-child(4){animation-delay:.17s}
+  .metas-grid .env:nth-child(5){animation-delay:.22s}
+  .metas-grid .env:nth-child(n+6){animation-delay:.26s}
+  @keyframes rise{to{opacity:1; transform:translateY(0);}}
+  .env.done{background:linear-gradient(165deg,var(--surface) 55%, var(--moss-light) 190%);}
+  .env.bought{opacity:.68; filter:saturate(.6);}
+  .env .emoji{font-size:26px; line-height:1; display:block; margin-bottom:8px;}
+  .env .nombre{font-weight:600; font-size:15.5px; margin:0 0 2px;}
+  .env .obj{font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; margin-bottom:12px;}
+  .env .seal-row{display:flex; align-items:center; gap:8px; margin-bottom:14px;}
+  .env .seal-bar{flex:1; height:6px; border-radius:99px; background:var(--line-soft); position:relative; overflow:visible;}
+  .env .seal-bar > i{display:block; height:100%; border-radius:99px; background:var(--brass); transition:width .6s cubic-bezier(.4,0,.2,1);}
+  .env.done .seal-bar > i{background:var(--moss);}
+  .env .seal-dot{
+    width:16px; height:16px; border-radius:50%; background:var(--brass); border:2px solid var(--surface);
+    box-shadow:0 0 0 1px var(--brass); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:9px; color:#fff;
+  }
+  .env.done .seal-dot{background:var(--moss); box-shadow:0 0 0 1px var(--moss);}
+  .env .pct{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint); margin-bottom:2px;}
+  .env .actions{display:flex; gap:6px; margin-top:12px;}
+  .env .icon-btn{
+    background:none; border:1px solid var(--line); border-radius:8px; width:30px; height:30px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft); font-size:13px;
+    transition:border-color .15s, color .15s;
+  }
+  .env .icon-btn:hover{border-color:var(--rust); color:var(--rust);}
+  .env .badge{
+    position:absolute; top:20px; right:16px; font-size:10px; font-family:'IBM Plex Mono',monospace;
+    background:var(--moss); color:#fff; padding:3px 7px; border-radius:99px; letter-spacing:.03em;
+  }
+  .env .drag-handle{
+    position:absolute; top:16px; left:14px; font-size:13px; color:var(--ink-faint);
+    cursor:grab; touch-action:none; padding:4px 5px; line-height:1; user-select:none;
+  }
+  .env.dragging{opacity:.45; box-shadow:none;}
+  .env .falta-txt{font-size:11px; color:var(--ink-soft); margin:-8px 0 10px; line-height:1.4;}
+  .env .fecha-obj{font-size:11px; color:var(--brass-dark); font-family:'IBM Plex Mono',monospace; margin:-6px 0 10px;}
+  .env-new{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    border:1.5px dashed var(--line); background:transparent; box-shadow:none; cursor:pointer;
+    color:var(--ink-faint); font-weight:600; font-size:13px; min-height:150px;
+    transition:border-color .15s, color .15s;
+  }
+  .env-new:hover{border-color:var(--brass); color:var(--brass-dark);}
+  .env-new .plus{font-size:22px; font-family:'Fraunces',serif;}
+
+  /* ---------- movimientos ---------- */
+  .ledger{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+  .ledger-row{
+    display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line-soft); font-size:13.5px;
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-row .fecha{color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; font-size:11.5px; width:64px; flex-shrink:0;}
+  .ledger-row .desc{flex:1; color:var(--ink);}
+  .ledger-row .desc b{font-weight:600;}
+  .ledger-row .monto{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13.5px; flex-shrink:0;}
+  .ledger-row .monto.pos{color:var(--moss-dark);}
+  .ledger-row .monto.neg{color:var(--ink-soft);}
+  .ledger-row .del{
+    background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;
+    opacity:0; transition:opacity .15s;
+  }
+  .ledger-row:hover .del{opacity:1;}
+  .ledger-row .del:hover{color:var(--rust);}
+  .ledger-empty{padding:30px 18px; text-align:center; color:var(--ink-faint); font-size:13.5px;}
+  .ledger-more{
+    display:block; width:100%; text-align:center; padding:12px; background:var(--bg-soft); border:none;
+    border-top:1px solid var(--line-soft); color:var(--brass-dark); font-weight:600; font-size:12.5px; cursor:pointer;
+  }
+
+  footer.status{
+    max-width:1040px; margin:30px auto 0; padding:0 20px; display:flex; align-items:center; gap:8px;
+    color:var(--ink-faint); font-size:11.5px; font-family:'IBM Plex Mono',monospace; flex-wrap:wrap;
+  }
+  #rate-pill{margin-left:auto;}
+  .dot{width:7px;height:7px;border-radius:50%; background:var(--ink-faint);}
+  .dot.ok{background:var(--moss);}
+  .dot.err{background:var(--rust);}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(34,32,27,.42); backdrop-filter:blur(2px);
+    display:none; align-items:flex-end; justify-content:center; z-index:50; padding:0;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--bg-soft); width:100%; max-width:420px; border-radius:20px 20px 0 0;
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom));
+    box-shadow:0 -12px 40px rgba(0,0,0,.2);
+    transform:translateY(30px); opacity:0; transition:transform .25s ease, opacity .25s ease;
+    max-height:88vh; overflow-y:auto;
+  }
+  .overlay.show .modal{transform:translateY(0); opacity:1;}
+  @media (min-width:640px){
+    .overlay{align-items:center;}
+    .modal{border-radius:18px; margin-bottom:0;}
+  }
+  .modal h3{font-family:'Fraunces',serif; font-size:19px; font-weight:600; margin:0 0 4px;}
+  .modal .modal-sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; letter-spacing:.02em;}
+  .field input[type=text], .field input[type=number], .field select, .field textarea{
+    width:100%; border:1px solid var(--line); background:var(--surface); border-radius:10px;
+    padding:11px 12px; font-family:'IBM Plex Sans',sans-serif; font-size:15px; color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{outline:2px solid var(--brass); outline-offset:1px;}
+  .field .amt-input{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:9px 12px; font-size:18px;
+    cursor:pointer; line-height:1;
+  }
+  .chip.sel{border-color:var(--brass); background:var(--brass-light);}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .modal-actions .btn{flex:1;}
+  .err-msg{color:var(--rust); font-size:12.5px; margin-top:-6px; margin-bottom:12px; display:none;}
+  .err-msg.show{display:block;}
+  .max-hint{font-size:11.5px; color:var(--ink-faint); margin-top:6px;}
+  .max-hint b{color:var(--brass-dark); cursor:pointer; text-decoration:underline;}
+  .cur-toggle{display:flex; gap:6px; margin-top:8px;}
+  .cur-btn{
+    border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:6px 12px;
+    font-size:12px; font-weight:600; cursor:pointer; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;
+  }
+  .cur-btn.sel{border-color:var(--brass); background:var(--brass-light); color:var(--brass-dark);}
+  .conv-hint{font-size:11.5px; color:var(--ink-faint); margin-top:7px; min-height:14px;}
+  .conv-hint b{color:var(--brass-dark); font-weight:600;}
+  .usd-eq{font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; font-weight:500;}
+  .vwrap{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+  .monto-wrap{display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;}
+  .field input[type=file]{
+    width:100%; font-size:12.5px; color:var(--ink-soft); padding:8px 0;
+  }
+  .file-existing{display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;}
+  .chart-card{padding:18px 20px 12px;}
+  .chart-svg{width:100%; height:130px; display:block;}
+  .chart-area{fill:rgba(169,118,47,.14); stroke:none;}
+  .chart-line{fill:none; stroke:var(--brass); stroke-width:2;}
+  .chart-labels{display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-top:8px;}
+  .chart-labels .chart-max{color:var(--brass-dark); font-weight:600;}
+  .month-card{padding:16px 20px;}
+  .month-card .headline{font-size:14px; color:var(--ink); margin:0;}
+  .month-card .headline b{color:var(--brass-dark); font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .month-row{display:flex; align-items:center; gap:14px; padding:11px 18px; border-bottom:1px solid var(--line-soft); font-size:13px;}
+  .month-row:last-child{border-bottom:none;}
+  .month-row .mes{flex:1; font-weight:600; text-transform:capitalize;}
+  .month-row .col{font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; min-width:76px;}
+  .month-row .col .lbl2{display:block; font-size:9px; color:var(--ink-faint); font-weight:500; text-transform:uppercase; letter-spacing:.04em; margin-top:1px;}
+  .collapsible-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between; background:transparent;
+    border:1px solid var(--line); border-radius:10px; padding:11px 16px; cursor:pointer;
+    font-family:'IBM Plex Sans',sans-serif; font-weight:600; font-size:13.5px; color:var(--ink-soft);
+  }
+  .collapsible-toggle:hover{border-color:var(--brass); color:var(--brass-dark);}
+  .collapsible-toggle .chev{transition:transform .2s ease; font-size:12px;}
+  .collapsible-toggle.open .chev{transform:rotate(180deg);}
+  .collapsible{display:none;}
+  .collapsible.open{display:block;}
+  .danger-link{
+    display:block; width:100%; text-align:center; background:none; border:none; margin-top:12px;
+    color:var(--ink-faint); font-size:12.5px; cursor:pointer; text-decoration:underline; padding:4px;
+  }
+  .danger-link:hover{color:var(--rust);}
+  .icon-link{
+    background:none; border:1px solid var(--line); border-radius:8px; padding:7px 12px; font-size:12.5px;
+    color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:600;
+  }
+  .icon-link:hover{border-color:var(--brass); color:var(--brass-dark);}
+  .top-actions{display:flex; gap:8px; align-items:center;}
+  .btn-icon{
+    background:transparent; border:1px solid var(--line); color:var(--ink-soft); border-radius:10px;
+    width:42px; height:42px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer;
+  }
+  .btn-icon:hover{border-color:var(--ink-faint); color:var(--ink);}
+
+  @media (max-width:680px){
+    .pool-row{grid-template-columns:1fr;}
+    header.top{flex-direction:column; align-items:flex-start; gap:14px;}
+    header.top .btn{align-self:stretch; justify-content:center;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .env{animation:none; opacity:1; transform:none;}
+    .bar>i, .seal-bar>i{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Ahorro · gastos grandes del depto</p>
+      <h1>Fondo del depto</h1>
+      <p class="sub">Ventanas, cortinas, luces — todo lo que se paga junto, se junta acá.</p>
+    </div>
+    <button class="btn btn-brass" id="btn-ingreso">+ Registrar ingreso</button>
+    <div class="top-actions">
+      <button class="btn-icon" id="btn-backup" title="Descargar backup (JSON)">⬇</button>
+    </div>
+  </header>
+
+  <section class="pool-row">
+    <div class="card pool-card">
+      <p class="lbl">Pozo sin asignar</p>
+      <p class="amt mono" id="pool-amt">$0</p>
+      <p class="usd-eq" id="pool-usd" style="margin:-2px 0 10px;"></p>
+      <p class="hint">Plata guardada que todavía no elegiste a qué meta va.</p>
+      <button class="btn btn-ghost btn-sm" id="btn-asignar-pozo">Asignar a una meta →</button>
+    </div>
+    <div class="card stats-card">
+      <div class="stat-line"><span class="k">Ahorrado en total</span><span class="vwrap"><span class="v mono" id="stat-total">$0</span><span class="usd-eq" id="stat-total-usd"></span></span></div>
+      <div class="stat-line"><span class="k">Ya asignado a metas</span><span class="vwrap"><span class="v mono" id="stat-asignado">$0</span><span class="usd-eq" id="stat-asignado-usd"></span></span></div>
+      <div>
+        <div class="stat-line"><span class="k">Progreso general</span><span class="v mono" id="stat-pct">0%</span></div>
+        <div class="bar"><i id="stat-bar" style="width:0%"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Metas</h2>
+      <span class="count" id="metas-count">0 activas</span>
+    </div>
+    <div class="metas-grid" id="metas-grid">
+      <button class="env env-new" id="btn-nueva-meta">
+        <span class="plus">+</span>
+        <span>Nueva meta</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="compradas-sec" style="display:none;">
+    <div class="sec-head"><h2>Ya compradas</h2></div>
+    <div class="metas-grid" id="compradas-grid"></div>
+  </section>
+
+  <section>
+    <button class="collapsible-toggle" id="stats-toggle">
+      <span>📊 Ver estadísticas</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="collapsible" id="stats-body">
+      <div class="sec-head" style="margin-top:18px;"><h2>Evolución del ahorro</h2></div>
+      <div class="card chart-card" id="chart-wrap"></div>
+
+      <div class="sec-head" style="margin-top:24px;"><h2>Mes a mes</h2></div>
+      <div class="card month-card" id="month-current"></div>
+      <div class="ledger" id="month-table" style="margin-top:12px;"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Movimientos</h2>
+    </div>
+    <div class="ledger" id="ledger"></div>
+  </section>
+</div>
+
+<footer class="status">
+  <span class="dot" id="status-dot"></span>
+  <span id="status-txt">Conectando…</span>
+  <span id="rate-pill">Cotización…</span>
+</footer>
+
+<!-- MODAL: ingreso -->
+<div class="overlay" id="ov-ingreso">
+  <div class="modal">
+    <h3>Registrar ingreso</h3>
+    <p class="modal-sub">Un monto suelto que estás guardando. Va directo al pozo sin asignar.</p>
+    <div class="field">
+      <label>Monto</label>
+      <input type="number" inputmode="decimal" class="amt-input" id="in-monto" placeholder="0" min="0">
+      <div class="cur-toggle" data-field="in-monto">
+        <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
+        <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
+      </div>
+      <p class="conv-hint" id="in-monto-conv"></p>
+    </div>
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <input type="text" id="in-nota" placeholder="Ej: aguinaldo, changa, vuelto...">
+    </div>
+    <p class="err-msg" id="in-err">Poné un monto mayor a cero.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-brass" id="in-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: nueva/editar meta -->
+<div class="overlay" id="ov-meta">
+  <div class="modal">
+    <h3 id="meta-title">Nueva meta</h3>
+    <p class="modal-sub">Una meta es un gasto grande puntual: ventanas, cortinas, luces...</p>
+    <div class="field">
+      <label>Ícono</label>
+      <div class="chips" id="meta-chips">
+        <button type="button" class="chip" data-e="🪟">🪟</button>
+        <button type="button" class="chip" data-e="🪡">🪡</button>
+        <button type="button" class="chip" data-e="💡">💡</button>
+        <button type="button" class="chip" data-e="🚪">🚪</button>
+        <button type="button" class="chip" data-e="🛋️">🛋️</button>
+        <button type="button" class="chip" data-e="🎨">🎨</button>
+        <button type="button" class="chip" data-e="🧱">🧱</button>
+        <button type="button" class="chip" data-e="🔧">🔧</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" id="meta-nombre" placeholder="Ej: Cambio de ventanas">
+    </div>
+    <div class="field">
+      <label>Objetivo (monto total estimado)</label>
+      <input type="number" inputmode="decimal" class="amt-input" id="meta-objetivo" placeholder="0" min="0">
+      <div class="cur-toggle" data-field="meta-objetivo">
+        <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
+        <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
+      </div>
+      <p class="conv-hint" id="meta-objetivo-conv"></p>
+    </div>
+
+    <button type="button" class="collapsible-toggle" id="meta-more-toggle" style="margin:2px 0 14px;">
+      <span>+ Más opciones (fecha, presupuesto)</span>
+      <span class="chev">▾</span>
+    </button>
+    <div class="collapsible" id="meta-more-body">
+      <div class="field">
+        <label>Fecha objetivo (opcional)</label>
+        <input type="date" id="meta-fecha">
+      </div>
+      <div class="field">
+        <label>Presupuesto — foto o PDF (opcional)</label>
+        <div class="file-existing" id="meta-file-existing" style="display:none;">
+          <button type="button" class="icon-link" id="meta-file-view">📎 Ver archivo actual</button>
+          <button type="button" class="icon-link" id="meta-file-remove">Quitar</button>
+        </div>
+        <input type="file" id="meta-file" accept="image/*,application/pdf">
+        <p class="conv-hint" id="meta-file-status"></p>
+      </div>
+    </div>
+
+    <p class="err-msg" id="meta-err">Completá nombre y objetivo.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-brass" id="meta-save">Guardar meta</button>
+    </div>
+    <button type="button" class="danger-link" id="meta-delete" style="display:none;">Eliminar esta meta</button>
+  </div>
+</div>
+
+<!-- MODAL: asignar -->
+<div class="overlay" id="ov-asignar">
+  <div class="modal">
+    <h3>Asignar plata a una meta</h3>
+    <p class="modal-sub" id="asignar-sub">Elegí a qué meta va y cuánto del pozo le asignás.</p>
+    <div class="field">
+      <label>Meta</label>
+      <select id="as-meta"></select>
+    </div>
+    <div class="field">
+      <label>Monto a asignar</label>
+      <input type="number" inputmode="decimal" class="amt-input" id="as-monto" placeholder="0" min="0">
+      <div class="cur-toggle" data-field="as-monto">
+        <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
+        <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
+      </div>
+      <p class="conv-hint" id="as-monto-conv"></p>
+      <p class="max-hint">Disponible en el pozo: <b id="as-max">$0</b></p>
+    </div>
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <input type="text" id="as-nota" placeholder="Ej: presupuesto Vidriería López">
+    </div>
+    <p class="err-msg" id="as-err">Revisá el monto: no puede superar el pozo disponible.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-brass" id="as-save">Asignar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: confirmar -->
+<div class="overlay" id="ov-confirm">
+  <div class="modal">
+    <h3 id="confirm-title">¿Confirmás?</h3>
+    <p class="modal-sub" id="confirm-sub"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-brass" id="confirm-ok" style="background:var(--rust); box-shadow:0 2px 0 #7d2d1e;">Sí, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  // ===== CONFIG (mismo proyecto Firebase que Tablero KS) =====
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA1O_ngxi_gHkUQlod9Okd-vVRCIwCsWeE",
+    authDomain: "tablero-ks.firebaseapp.com",
+    projectId: "tablero-ks",
+  };
+  // Vive dentro de /tableros/{board}/tareas/{doc}, la misma ruta que ya
+  // tiene reglas abiertas para el Tablero KS — sin tocar nada en Firebase.
+  const BOARD_ID = "depto-ks-2026-hN4vQ8rT2mXs";
+
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.firestore();
+  const tareasCol = db.collection("tableros").doc(BOARD_ID).collection("tareas");
+  const poolRef = tareasCol.doc("config"); // doc fijo: {pozo, metas}
+  const movRef = tareasCol; // el resto de los docs de esta colección son movimientos (traen "fecha")
+
+  // ===== helpers =====
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  const money = (n) => "$" + Math.round(n || 0).toLocaleString("es-AR");
+  const fmtDate = (ts) => {
+    if(!ts) return "--/--";
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleDateString("es-AR", {day:"2-digit", month:"2-digit"});
+  };
+  const tsToDate = (ts) => ts.toDate ? ts.toDate() : new Date(ts);
+  const fmtFechaCorta = (isoDate) => {
+    const d = new Date(isoDate+"T00:00:00");
+    return d.toLocaleDateString("es-AR", {month:"short", year:"numeric"});
+  };
+  function monthsUntil(isoDate){
+    const target = new Date(isoDate+"T00:00:00");
+    const now = new Date();
+    let months = (target.getFullYear()-now.getFullYear())*12 + (target.getMonth()-now.getMonth());
+    return Math.max(1, months);
+  }
+  function avgMonthlyIngreso(){
+    const ingresos = movimientos.filter(m=>m.tipo==="ingreso" && m.fecha);
+    if(ingresos.length < 2) return null;
+    const dates = ingresos.map(m=>tsToDate(m.fecha).getTime());
+    const total = ingresos.reduce((s,m)=>s+m.monto, 0);
+    const meses = Math.max(1, (Date.now()-Math.min(...dates))/(1000*60*60*24*30));
+    return total/meses;
+  }
+
+  let state = { pozo:0, metas:[], rate:null };
+  let movimientos = [];
+  let movLimit = 8;
+  const curFields = { "in-monto":"ARS", "meta-objetivo":"ARS", "as-monto":"ARS" };
+
+  // ===== cotización dólar (blue, dolarapi.com — sin API key) =====
+  async function fetchRate(){
+    try{
+      const r = await fetch("https://dolarapi.com/v1/dolares/oficial");
+      const d = await r.json();
+      state.rate = d && d.venta ? d.venta : null;
+    }catch(e){
+      console.error("No se pudo obtener la cotización del dólar", e);
+      state.rate = null;
+    }
+    renderRatePill();
+    render();
+    ["in-monto","meta-objetivo","as-monto"].forEach(updateConvHint);
+  }
+  function renderRatePill(){
+    $("#rate-pill").textContent = state.rate
+      ? `Dólar oficial: $${Math.round(state.rate).toLocaleString("es-AR")}`
+      : "Cotización del dólar no disponible";
+  }
+  const usdTxt = (arsAmount) => {
+    if(!state.rate || !arsAmount) return "";
+    const u = arsAmount / state.rate;
+    return "≈ US$ " + u.toLocaleString("en-US", {maximumFractionDigits: u>=100?0:2});
+  };
+  const toARS = (val, fieldId) => (curFields[fieldId] === "USD") ? (state.rate ? val*state.rate : null) : val;
+
+  function updateConvHint(fieldId){
+    const input = $("#"+fieldId), conv = $("#"+fieldId+"-conv");
+    if(!input || !conv) return;
+    const val = parseFloat(input.value);
+    if(!(val > 0)){ conv.innerHTML = ""; return; }
+    const cur = curFields[fieldId];
+    if(!state.rate){ conv.textContent = "Cotización del dólar no disponible todavía"; return; }
+    if(cur === "USD"){
+      conv.innerHTML = `≈ <b>${money(val*state.rate)}</b> ARS`;
+    } else {
+      conv.innerHTML = `≈ <b>US$ ${(val/state.rate).toLocaleString("en-US",{maximumFractionDigits:2})}</b>`;
+    }
+  }
+  function resetCurrencyToggle(fieldId){
+    curFields[fieldId] = "ARS";
+    const wrap = document.querySelector(`.cur-toggle[data-field="${fieldId}"]`);
+    if(wrap) wrap.querySelectorAll(".cur-btn").forEach(b=> b.classList.toggle("sel", b.dataset.cur==="ARS"));
+    updateConvHint(fieldId);
+  }
+  function setupCurrencyToggle(fieldId){
+    const wrap = document.querySelector(`.cur-toggle[data-field="${fieldId}"]`);
+    const input = $("#"+fieldId);
+    if(!wrap || !input) return;
+    wrap.querySelectorAll(".cur-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        wrap.querySelectorAll(".cur-btn").forEach(x=>x.classList.remove("sel"));
+        btn.classList.add("sel");
+        curFields[fieldId] = btn.dataset.cur;
+        updateConvHint(fieldId);
+      });
+    });
+    input.addEventListener("input", ()=> updateConvHint(fieldId));
+  }
+  ["in-monto","meta-objetivo","as-monto"].forEach(setupCurrencyToggle);
+  fetchRate();
+  setInterval(fetchRate, 5*60*1000);
+
+  function setupCollapsible(toggleId, bodyId){
+    const t = $("#"+toggleId), b = $("#"+bodyId);
+    if(!t || !b) return;
+    t.addEventListener("click", ()=>{
+      t.classList.toggle("open");
+      b.classList.toggle("open");
+    });
+  }
+  setupCollapsible("stats-toggle", "stats-body");
+  setupCollapsible("meta-more-toggle", "meta-more-body");
+
+  function setStatus(ok, txt){
+    $("#status-dot").className = "dot " + (ok===true?"ok":ok===false?"err":"");
+    $("#status-txt").textContent = txt;
+  }
+
+  // ===== render =====
+  function render(){
+    $("#pool-amt").textContent = money(state.pozo);
+    $("#pool-usd").textContent = usdTxt(state.pozo);
+    const asignadoTotal = state.metas.reduce((s,m)=>s + (m.asignado||0), 0);
+    const total = state.pozo + asignadoTotal;
+    const objetivoTotal = state.metas.reduce((s,m)=>s + (m.objetivo||0), 0) || 1;
+    const pct = Math.min(100, Math.round((asignadoTotal/objetivoTotal)*100));
+    $("#stat-total").textContent = money(total);
+    $("#stat-total-usd").textContent = usdTxt(total);
+    $("#stat-asignado").textContent = money(asignadoTotal);
+    $("#stat-asignado-usd").textContent = usdTxt(asignadoTotal);
+    $("#stat-pct").textContent = pct + "%";
+    $("#stat-bar").style.width = pct + "%";
+
+    state.avgIngreso = avgMonthlyIngreso();
+    renderMetas();
+    renderLedger();
+    renderChart();
+    renderMonthly();
+  }
+
+  function metaEnvHtml(m){
+    const pct = m.objetivo > 0 ? Math.min(100, Math.round((m.asignado/m.objetivo)*100)) : 0;
+    const done = m.asignado >= m.objetivo && m.objetivo > 0;
+    const bought = !!m.comprada;
+    const falta = Math.max(0, (m.objetivo||0) - (m.asignado||0));
+    let cls = "env" + (done?" done":"") + (bought?" bought":"");
+    let progresoLine = "";
+    if(!done && !bought){
+      if(m.fechaObjetivo){
+        const meses = monthsUntil(m.fechaObjetivo);
+        progresoLine = `<p class="fecha-obj">🎯 ${fmtFechaCorta(m.fechaObjetivo)} · ahorrá ${money(Math.ceil(falta/meses))}/mes</p>`;
+      } else if(state.avgIngreso){
+        const meses = Math.max(1, Math.ceil(falta/state.avgIngreso));
+        progresoLine = `<p class="falta-txt">Faltan ${money(falta)} · a este ritmo, ~${meses} ${meses===1?"mes":"meses"} más</p>`;
+      } else {
+        progresoLine = `<p class="falta-txt">Faltan ${money(falta)}</p>`;
+      }
+    }
+    return `
+      <div class="${cls}" data-id="${m.id}">
+        ${!bought ? `<span class="drag-handle" title="Arrastrar para reordenar">⠿</span>` : ""}
+        ${bought ? '<span class="badge">Comprado</span>' : (done ? '<span class="badge">Lista ✓</span>' : '')}
+        <span class="emoji">${m.emoji||"🏠"}</span>
+        <p class="nombre">${escapeHtml(m.nombre)}${m.tienePresupuesto ? ' <span title="Tiene presupuesto adjunto" style="font-size:11px;">📎</span>' : ""}</p>
+        <p class="obj mono">${money(m.asignado)} / ${money(m.objetivo)}</p>
+        ${progresoLine}
+        <p class="pct">${pct}% del objetivo</p>
+        <div class="seal-row">
+          <div class="seal-bar"><i style="width:${pct}%"></i></div>
+          <div class="seal-dot">${done?"✓":""}</div>
+        </div>
+        ${bought ? "" : `
+        <div class="actions">
+          ${!done ? `<button class="btn btn-brass btn-sm" data-act="asignar" data-id="${m.id}" style="flex:1;">Asignar</button>` : `<button class="btn btn-brass btn-sm" data-act="comprar" data-id="${m.id}" style="flex:1; background:var(--moss); box-shadow:0 2px 0 var(--moss-dark);">Marcar comprado</button>`}
+          <button class="icon-btn" data-act="editar" data-id="${m.id}" title="Editar">✎</button>
+        </div>`}
+      </div>`;
+  }
+
+  function renderMetas(){
+    const activas = state.metas.filter(m=>!m.comprada).sort((a,b)=>(a.orden||0)-(b.orden||0));
+    const compradas = state.metas.filter(m=>m.comprada).sort((a,b)=>(a.orden||0)-(b.orden||0));
+    $("#metas-count").textContent = activas.length + (activas.length===1 ? " activa" : " activas");
+
+    const grid = $("#metas-grid");
+    grid.innerHTML = activas.map(metaEnvHtml).join("") +
+      `<button class="env env-new" id="btn-nueva-meta"><span class="plus">+</span><span>Nueva meta</span></button>`;
+    $("#btn-nueva-meta").addEventListener("click", ()=>openMetaModal());
+
+    const sec = $("#compradas-sec");
+    if(compradas.length){
+      sec.style.display = "";
+      $("#compradas-grid").innerHTML = compradas.map(metaEnvHtml).join("");
+    } else {
+      sec.style.display = "none";
+    }
+
+    $$('[data-act]').forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        const m = state.metas.find(x=>x.id===id);
+        if(!m) return;
+        if(act==="asignar") openAsignarModal(m.id);
+        else if(act==="editar") openMetaModal(m);
+        else if(act==="eliminar") confirmEliminarMeta(m);
+        else if(act==="comprar") confirmComprar(m);
+        else if(act==="ver-presupuesto") verPresupuesto(m.id);
+      });
+    });
+
+    attachDragHandlers();
+  }
+
+  // ===== orden manual (arrastrar para reordenar) =====
+  let dragEl = null;
+  function attachDragHandlers(){
+    $$('#metas-grid .drag-handle').forEach(h=>{
+      h.addEventListener("pointerdown", onDragStart);
+    });
+  }
+  function onDragStart(e){
+    const card = e.target.closest(".env");
+    if(!card) return;
+    dragEl = card;
+    dragEl.classList.add("dragging");
+    document.addEventListener("pointermove", onDragMove);
+    document.addEventListener("pointerup", onDragEnd);
+    e.preventDefault();
+  }
+  function onDragMove(e){
+    if(!dragEl) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const over = el && el.closest && el.closest(".env[data-id]");
+    if(over && over !== dragEl && over.parentElement === dragEl.parentElement){
+      const rect = over.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height/2;
+      over.parentElement.insertBefore(dragEl, before ? over : over.nextSibling);
+    }
+  }
+  async function onDragEnd(){
+    document.removeEventListener("pointermove", onDragMove);
+    document.removeEventListener("pointerup", onDragEnd);
+    if(!dragEl){ return; }
+    dragEl.classList.remove("dragging");
+    const ids = $$('#metas-grid .env[data-id]').map(el=>el.dataset.id);
+    dragEl = null;
+    let changed = false;
+    ids.forEach((id,i)=>{
+      const m = state.metas.find(x=>x.id===id);
+      if(m && m.orden !== i){ m.orden = i; changed = true; }
+    });
+    if(changed) await saveState();
+  }
+
+  function movDescHtml(mv){
+    if(mv.tipo === "ingreso") return `Ingreso al pozo${mv.nota? " · "+escapeHtml(mv.nota):""}`;
+    if(mv.tipo === "asignacion") return `Asignado a <b>${escapeHtml(mv.metaNombre||"meta")}</b>${mv.nota? " · "+escapeHtml(mv.nota):""}`;
+    if(mv.tipo === "gasto") return `Comprado: <b>${escapeHtml(mv.metaNombre||"meta")}</b>`;
+    if(mv.tipo === "ajuste") return `Ajuste${mv.nota? " · "+escapeHtml(mv.nota):""}`;
+    return mv.tipo;
+  }
+
+  function renderLedger(){
+    const el = $("#ledger");
+    if(!movimientos.length){
+      el.innerHTML = `<div class="ledger-empty">Todavía no hay movimientos. Registrá un ingreso para arrancar.</div>`;
+      return;
+    }
+    const visible = movimientos.slice(0, movLimit);
+    const isNeg = (mv) => mv.tipo === "asignacion" || mv.tipo === "gasto";
+    el.innerHTML = visible.map(mv => `
+      <div class="ledger-row">
+        <span class="fecha">${fmtDate(mv.fecha)}</span>
+        <span class="desc">${movDescHtml(mv)}</span>
+        <div class="monto-wrap">
+          <span class="monto ${isNeg(mv)?'neg':'pos'}">${isNeg(mv)?'−':'+'}${money(mv.monto)}</span>
+          <span class="usd-eq">${usdTxt(mv.monto)}</span>
+        </div>
+        <button class="del" data-mid="${mv.id}" title="Eliminar movimiento">✕</button>
+      </div>`).join("") +
+      (movimientos.length > movLimit ? `<button class="ledger-more" id="ledger-more">Ver ${Math.min(movimientos.length-movLimit,20)} más</button>` : "");
+
+    $$(".del").forEach(b=> b.addEventListener("click", ()=> confirmEliminarMov(b.dataset.mid)));
+    const more = $("#ledger-more");
+    if(more) more.addEventListener("click", ()=>{ movLimit += 20; renderLedger(); });
+  }
+
+  function escapeHtml(s){
+    return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  // ===== gráfico de evolución (SVG inline, sin librerías) =====
+  function renderChart(){
+    const el = $("#chart-wrap");
+    const ingresos = movimientos.filter(m=>m.tipo==="ingreso" && m.fecha)
+      .slice().sort((a,b)=> tsToDate(a.fecha) - tsToDate(b.fecha));
+    if(ingresos.length < 2){
+      el.innerHTML = `<div class="ledger-empty">Con un par de ingresos más vas a ver acá la curva de ahorro.</div>`;
+      return;
+    }
+    let acc = 0;
+    const pts = ingresos.map(m=>{ acc += m.monto; return {d: tsToDate(m.fecha), v: acc}; });
+    const maxV = pts[pts.length-1].v || 1;
+    const minD = pts[0].d.getTime(), maxD = pts[pts.length-1].d.getTime();
+    const span = Math.max(1, maxD-minD);
+    const W=600, H=130, PAD=6;
+    const x = (d)=> PAD + (W-2*PAD) * ((d.getTime()-minD)/span);
+    const y = (v)=> H-PAD - (H-2*PAD) * (v/maxV);
+    const path = pts.map((p,i)=> `${i===0?'M':'L'}${x(p.d).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    const areaPath = `${path} L${x(pts[pts.length-1].d).toFixed(1)},${H-PAD} L${x(pts[0].d).toFixed(1)},${H-PAD} Z`;
+    el.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" class="chart-svg" preserveAspectRatio="none">
+        <path d="${areaPath}" class="chart-area"></path>
+        <path d="${path}" class="chart-line"></path>
+      </svg>
+      <div class="chart-labels">
+        <span>${fmtDate(pts[0].d)}</span>
+        <span class="chart-max">${money(maxV)}</span>
+        <span>${fmtDate(pts[pts.length-1].d)}</span>
+      </div>`;
+  }
+
+  // ===== resumen mes a mes =====
+  function fmtMesLargo(y, m){
+    return new Date(y, m, 1).toLocaleDateString("es-AR", {month:"long", year:"numeric"});
+  }
+  function computeMonthlySummary(){
+    const byMonth = {};
+    movimientos.forEach(mv=>{
+      if(!mv.fecha) return;
+      const d = tsToDate(mv.fecha);
+      const key = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+      if(!byMonth[key]) byMonth[key] = {ingreso:0, asignado:0, y:d.getFullYear(), m:d.getMonth()};
+      if(mv.tipo==="ingreso") byMonth[key].ingreso += mv.monto;
+      else if(mv.tipo==="asignacion") byMonth[key].asignado += mv.monto;
+    });
+    const keys = Object.keys(byMonth).sort();
+    let acc = 0;
+    const rows = keys.map(k=>{ acc += byMonth[k].ingreso; return {key:k, ...byMonth[k], acumulado:acc}; });
+    return rows.reverse(); // más reciente primero
+  }
+  function renderMonthly(){
+    const rows = computeMonthlySummary();
+    const now = new Date();
+    const curKey = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+    const curRow = rows.find(r=>r.key===curKey);
+    const mesNombre = now.toLocaleDateString("es-AR", {month:"long"});
+    $("#month-current").innerHTML = curRow
+      ? `<p class="headline">En <b>${mesNombre}</b> entraron <b>${money(curRow.ingreso)}</b> y se asignaron <b>${money(curRow.asignado)}</b>.</p>`
+      : `<p class="headline">Todavía no hay movimientos en <b>${mesNombre}</b>.</p>`;
+
+    const table = $("#month-table");
+    if(!rows.length){
+      table.innerHTML = `<div class="ledger-empty">Sin historial todavía.</div>`;
+      return;
+    }
+    table.innerHTML = rows.map(r=>`
+      <div class="month-row">
+        <span class="mes">${fmtMesLargo(r.y, r.m)}</span>
+        <span class="col">${money(r.ingreso)}<span class="lbl2">Entró</span></span>
+        <span class="col">${money(r.asignado)}<span class="lbl2">Asignó</span></span>
+        <span class="col">${money(r.acumulado)}<span class="lbl2">Total</span></span>
+      </div>`).join("");
+  }
+
+  // ===== firestore sync =====
+  poolRef.onSnapshot(doc=>{
+    if(doc.exists){
+      const d = doc.data();
+      state.pozo = d.pozo || 0;
+      state.metas = d.metas || [];
+    } else {
+      poolRef.set({pozo:0, metas:[], creado:firebase.firestore.FieldValue.serverTimestamp()});
+      state = {pozo:0, metas:[]};
+    }
+    render();
+    setStatus(true, "Sincronizado");
+  }, err=>{
+    console.error(err);
+    setStatus(false, "Sin conexión — revisá las reglas de Firestore");
+  });
+
+  movRef.orderBy("fecha","desc").limit(200).onSnapshot(snap=>{
+    movimientos = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    state.avgIngreso = avgMonthlyIngreso();
+    renderMetas();
+    renderLedger();
+    renderChart();
+    renderMonthly();
+  }, err=>console.error(err));
+
+  // ===== mutations =====
+  function saveState(){
+    return poolRef.set({pozo: state.pozo, metas: state.metas, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  }
+  function addMovimiento(mv){
+    return movRef.add({...mv, fecha: firebase.firestore.FieldValue.serverTimestamp()});
+  }
+
+  async function doIngreso(monto, nota){
+    state.pozo += monto;
+    await saveState();
+    await addMovimiento({tipo:"ingreso", monto, nota: nota||""});
+  }
+
+  async function doNuevaMeta(id, nombre, emoji, objetivo, fechaObjetivo, orden){
+    state.metas.push({id, nombre, emoji, objetivo, asignado:0, comprada:false, fechaObjetivo:fechaObjetivo||null, orden, tienePresupuesto:false, presupuestoNombre:null});
+    await saveState();
+  }
+
+  async function doEditarMeta(id, nombre, emoji, objetivo, fechaObjetivo){
+    const m = state.metas.find(x=>x.id===id);
+    if(!m) return;
+    m.nombre = nombre; m.emoji = emoji; m.objetivo = objetivo; m.fechaObjetivo = fechaObjetivo||null;
+    await saveState();
+  }
+
+  async function doAsignar(metaId, monto, nota){
+    const m = state.metas.find(x=>x.id===metaId);
+    if(!m) return;
+    state.pozo -= monto;
+    m.asignado = (m.asignado||0) + monto;
+    await saveState();
+    await addMovimiento({tipo:"asignacion", monto, metaId, metaNombre:m.nombre, nota: nota||""});
+  }
+
+  async function doComprar(metaId){
+    const m = state.metas.find(x=>x.id===metaId);
+    if(!m) return;
+    m.comprada = true;
+    await saveState();
+    await addMovimiento({tipo:"gasto", monto:m.asignado, metaId, metaNombre:m.nombre});
+  }
+
+  async function doEliminarMeta(m){
+    if(m.asignado > 0 && !m.comprada){
+      state.pozo += m.asignado;
+    }
+    state.metas = state.metas.filter(x=>x.id!==m.id);
+    await saveState();
+    if(m.asignado > 0 && !m.comprada){
+      await addMovimiento({tipo:"ajuste", monto:m.asignado, nota:`Meta "${m.nombre}" eliminada — vuelve al pozo`});
+    }
+    if(m.tienePresupuesto){
+      tareasCol.doc(`presupuesto-${m.id}`).delete().catch(()=>{});
+    }
+  }
+
+  async function doEliminarMov(id){
+    const mv = movimientos.find(x=>x.id===id);
+    if(!mv) return;
+    if(mv.tipo === "ingreso"){
+      state.pozo -= mv.monto;
+    } else if(mv.tipo === "asignacion"){
+      const m = state.metas.find(x=>x.id===mv.metaId);
+      state.pozo += mv.monto;
+      if(m) m.asignado = Math.max(0, (m.asignado||0) - mv.monto);
+    } else if(mv.tipo === "gasto"){
+      const m = state.metas.find(x=>x.id===mv.metaId);
+      if(m) m.comprada = false;
+    }
+    await saveState();
+    await movRef.doc(id).delete();
+  }
+
+  // ===== backup / export =====
+  function exportBackup(){
+    const data = {
+      exportado: new Date().toISOString(),
+      pozo: state.pozo,
+      metas: state.metas,
+      movimientos: movimientos.map(mv => ({...mv, fecha: mv.fecha ? tsToDate(mv.fecha).toISOString() : null}))
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fondo-depto-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  $("#btn-backup").addEventListener("click", exportBackup);
+
+  // ===== presupuestos adjuntos (foto/PDF por meta) =====
+  function readFileAsCompressed(file){
+    return new Promise((resolve, reject)=>{
+      if(file.type === "application/pdf"){
+        const reader = new FileReader();
+        reader.onload = ()=> resolve({data: reader.result, mime:"application/pdf", nombre:file.name});
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const maxW = 1400;
+          const scale = Math.min(1, maxW/img.width);
+          const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img,0,0,w,h);
+          resolve({data: canvas.toDataURL("image/jpeg",0.8), mime:"image/jpeg", nombre:file.name});
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  async function verPresupuesto(metaId){
+    try{
+      const snap = await tareasCol.doc(`presupuesto-${metaId}`).get();
+      if(!snap.exists) return;
+      const d = snap.data();
+      const w = window.open();
+      if(!w) return;
+      if(d.mime === "application/pdf"){ w.location = d.data; }
+      else { w.document.write(`<title>Presupuesto</title><body style="margin:0;background:#111;"><img src="${d.data}" style="max-width:100%;display:block;margin:0 auto;"></body>`); }
+    }catch(e){ console.error(e); }
+  }
+
+  // ===== modals: generic =====
+  function openModal(id){ $(id).classList.add("show"); }
+  function closeModal(id){ $(id).classList.remove("show"); }
+  $$("[data-close]").forEach(b=> b.addEventListener("click", (e)=>{
+    closeModal("#" + e.target.closest(".overlay").id);
+  }));
+  $$(".overlay").forEach(ov=> ov.addEventListener("click", (e)=>{ if(e.target===ov) closeModal("#"+ov.id); }));
+
+  // ---- ingreso modal ----
+  $("#btn-ingreso").addEventListener("click", ()=>{
+    $("#in-monto").value = ""; $("#in-nota").value = ""; $("#in-err").classList.remove("show");
+    resetCurrencyToggle("in-monto");
+    openModal("#ov-ingreso");
+    setTimeout(()=>$("#in-monto").focus(), 250);
+  });
+  $("#in-save").addEventListener("click", async ()=>{
+    const raw = parseFloat($("#in-monto").value);
+    const errEl = $("#in-err");
+    if(!(raw > 0)){ errEl.textContent = "Poné un monto mayor a cero."; errEl.classList.add("show"); return; }
+    const monto = toARS(raw, "in-monto");
+    if(monto === null){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos o esperá unos segundos."; errEl.classList.add("show"); return; }
+    errEl.classList.remove("show");
+    $("#in-save").disabled = true;
+    await doIngreso(monto, $("#in-nota").value.trim());
+    $("#in-save").disabled = false;
+    closeModal("#ov-ingreso");
+  });
+
+  // ---- meta modal (nueva/editar) ----
+  let editingMetaId = null;
+  let editingIsNew = false;
+  let pendingPresupuesto = null; // null = sin cambios, "remove" = quitar, {data,mime,nombre} = nuevo archivo
+  function openMetaModal(m){
+    editingIsNew = !m;
+    editingMetaId = m ? m.id : uid();
+    pendingPresupuesto = null;
+    $("#meta-title").textContent = m ? "Editar meta" : "Nueva meta";
+    $("#meta-nombre").value = m ? m.nombre : "";
+    $("#meta-objetivo").value = m ? m.objetivo : "";
+    $("#meta-fecha").value = m && m.fechaObjetivo ? m.fechaObjetivo : "";
+    $("#meta-file").value = "";
+    $("#meta-file-status").textContent = "";
+    if(m && m.tienePresupuesto){
+      $("#meta-file-existing").style.display = "flex";
+      $("#meta-file-view").textContent = `📎 Ver: ${m.presupuestoNombre || "archivo"}`;
+    } else {
+      $("#meta-file-existing").style.display = "none";
+    }
+    $("#meta-err").classList.remove("show");
+    $$("#meta-chips .chip").forEach(c=> c.classList.toggle("sel", m ? c.dataset.e===m.emoji : false));
+    if(!m) $$("#meta-chips .chip")[0].classList.add("sel");
+    resetCurrencyToggle("meta-objetivo");
+    const hasAdvanced = !!(m && (m.fechaObjetivo || m.tienePresupuesto));
+    $("#meta-more-toggle").classList.toggle("open", hasAdvanced);
+    $("#meta-more-body").classList.toggle("open", hasAdvanced);
+    $("#meta-delete").style.display = m ? "block" : "none";
+    openModal("#ov-meta");
+  }
+  $("#meta-delete").addEventListener("click", ()=>{
+    const m = state.metas.find(x=>x.id===editingMetaId);
+    if(!m) return;
+    closeModal("#ov-meta");
+    confirmEliminarMeta(m);
+  });
+  $("#meta-file").addEventListener("change", async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    $("#meta-file-status").textContent = "Procesando…";
+    try{
+      const res = await readFileAsCompressed(file);
+      if(res.data.length > 900000){
+        $("#meta-file-status").textContent = "Pesa mucho — probá una foto más chica o un PDF más liviano.";
+        pendingPresupuesto = null;
+        return;
+      }
+      pendingPresupuesto = res;
+      $("#meta-file-status").textContent = `Listo para guardar: ${res.nombre}`;
+    }catch(err){
+      console.error(err);
+      $("#meta-file-status").textContent = "No se pudo leer el archivo.";
+    }
+  });
+  $("#meta-file-view").addEventListener("click", ()=> verPresupuesto(editingMetaId));
+  $("#meta-file-remove").addEventListener("click", ()=>{
+    pendingPresupuesto = "remove";
+    $("#meta-file-existing").style.display = "none";
+    $("#meta-file-status").textContent = "Se quita al guardar.";
+  });
+  $$("#meta-chips .chip").forEach(c=> c.addEventListener("click", ()=>{
+    $$("#meta-chips .chip").forEach(x=>x.classList.remove("sel"));
+    c.classList.add("sel");
+  }));
+  $("#meta-save").addEventListener("click", async ()=>{
+    const nombre = $("#meta-nombre").value.trim();
+    const rawObjetivo = parseFloat($("#meta-objetivo").value);
+    const fecha = $("#meta-fecha").value || null;
+    const chip = $("#meta-chips .chip.sel");
+    const emoji = chip ? chip.dataset.e : "🏠";
+    const errEl = $("#meta-err");
+    if(!nombre || !(rawObjetivo > 0)){ errEl.textContent = "Completá nombre y objetivo."; errEl.classList.add("show"); return; }
+    const objetivo = toARS(rawObjetivo, "meta-objetivo");
+    if(objetivo === null){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos."; errEl.classList.add("show"); return; }
+    errEl.classList.remove("show");
+    $("#meta-save").disabled = true;
+
+    if(editingIsNew){
+      const maxOrden = state.metas.reduce((mx,x)=> Math.max(mx, x.orden||0), -1);
+      await doNuevaMeta(editingMetaId, nombre, emoji, objetivo, fecha, maxOrden+1);
+    } else {
+      await doEditarMeta(editingMetaId, nombre, emoji, objetivo, fecha);
+    }
+
+    if(pendingPresupuesto === "remove"){
+      await tareasCol.doc(`presupuesto-${editingMetaId}`).delete().catch(()=>{});
+      const m = state.metas.find(x=>x.id===editingMetaId);
+      if(m){ m.tienePresupuesto = false; m.presupuestoNombre = null; }
+      await saveState();
+    } else if(pendingPresupuesto && pendingPresupuesto.data){
+      await tareasCol.doc(`presupuesto-${editingMetaId}`).set({
+        esPresupuesto:true, data:pendingPresupuesto.data, mime:pendingPresupuesto.mime,
+        nombre:pendingPresupuesto.nombre, subido: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const m = state.metas.find(x=>x.id===editingMetaId);
+      if(m){ m.tienePresupuesto = true; m.presupuestoNombre = pendingPresupuesto.nombre; }
+      await saveState();
+    }
+
+    $("#meta-save").disabled = false;
+    closeModal("#ov-meta");
+  });
+
+  // ---- asignar modal ----
+  function openAsignarModal(preselectId){
+    const sel = $("#as-meta");
+    const disponibles = state.metas.filter(m=>!m.comprada && (m.asignado < m.objetivo));
+    if(!disponibles.length){
+      $("#asignar-sub").textContent = "No hay metas activas todavía — creá una primero.";
+      sel.innerHTML = "";
+      $("#as-save").disabled = true;
+    } else {
+      $("#asignar-sub").textContent = "Elegí a qué meta va y cuánto del pozo le asignás.";
+      sel.innerHTML = disponibles.map(m=>`<option value="${m.id}">${m.emoji} ${escapeHtml(m.nombre)} (falta ${money(m.objetivo-m.asignado)})</option>`).join("");
+      if(preselectId) sel.value = preselectId;
+      $("#as-save").disabled = false;
+    }
+    $("#as-monto").value = "";
+    $("#as-nota").value = "";
+    $("#as-max").textContent = money(state.pozo);
+    $("#as-err").classList.remove("show");
+    resetCurrencyToggle("as-monto");
+    openModal("#ov-asignar");
+  }
+  $("#btn-asignar-pozo").addEventListener("click", ()=> openAsignarModal());
+  $("#as-max").addEventListener("click", ()=> { curFields["as-monto"]="ARS"; document.querySelector('.cur-toggle[data-field="as-monto"] .cur-btn[data-cur="ARS"]').click(); $("#as-monto").value = state.pozo; updateConvHint("as-monto"); });
+  $("#as-save").addEventListener("click", async ()=>{
+    const metaId = $("#as-meta").value;
+    const raw = parseFloat($("#as-monto").value);
+    const errEl = $("#as-err");
+    if(!metaId || !(raw > 0)){ errEl.textContent = "Revisá el monto: no puede superar el pozo disponible."; errEl.classList.add("show"); return; }
+    const monto = toARS(raw, "as-monto");
+    if(monto === null){ errEl.textContent = "No tengo la cotización del dólar todavía — probá en pesos."; errEl.classList.add("show"); return; }
+    if(monto > state.pozo){ errEl.textContent = "Ese monto supera el pozo disponible."; errEl.classList.add("show"); return; }
+    errEl.classList.remove("show");
+    $("#as-save").disabled = true;
+    await doAsignar(metaId, monto, $("#as-nota").value.trim());
+    $("#as-save").disabled = false;
+    closeModal("#ov-asignar");
+  });
+
+  // ---- confirm modal ----
+  let confirmAction = null;
+  function openConfirm(title, sub, action){
+    $("#confirm-title").textContent = title;
+    $("#confirm-sub").textContent = sub;
+    confirmAction = action;
+    openModal("#ov-confirm");
+  }
+  $("#confirm-ok").addEventListener("click", async ()=>{
+    if(confirmAction) await confirmAction();
+    closeModal("#ov-confirm");
+  });
+  function confirmEliminarMeta(m){
+    const extra = (m.asignado>0 && !m.comprada) ? ` Los ${money(m.asignado)} asignados vuelven al pozo.` : "";
+    openConfirm(`¿Eliminar "${m.nombre}"?`, `Esta acción no se puede deshacer.${extra}`, ()=> doEliminarMeta(m));
+  }
+  function confirmComprar(m){
+    openConfirm(`¿Marcar "${m.nombre}" como comprada?`, `Se registra como gasto realizado por ${money(m.asignado)}.`, ()=> doComprar(m.id));
+  }
+  function confirmEliminarMov(id){
+    openConfirm("¿Eliminar este movimiento?", "Se deshace su efecto sobre el pozo o la meta correspondiente.", ()=> doEliminarMov(id));
+  }
+
+})();
+</script>
+</body>
+</html>
