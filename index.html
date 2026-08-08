@@ -333,6 +333,7 @@
     <div class="card stats-card">
       <div class="stat-line"><span class="k">Ahorrado en total</span><span class="vwrap"><span class="v mono" id="stat-total">$0</span><span class="usd-eq" id="stat-total-usd"></span></span></div>
       <div class="stat-line"><span class="k">Ya asignado a metas</span><span class="vwrap"><span class="v mono" id="stat-asignado">$0</span><span class="usd-eq" id="stat-asignado-usd"></span></span></div>
+      <div class="stat-line"><span class="k">Total planificado (todas las metas)</span><span class="vwrap"><span class="v mono" id="stat-planificado">$0</span><span class="usd-eq" id="stat-planificado-usd"></span></span></div>
       <div>
         <div class="stat-line"><span class="k">Progreso general</span><span class="v mono" id="stat-pct">0%</span></div>
         <div class="bar"><i id="stat-bar" style="width:0%"></i></div>
@@ -394,7 +395,7 @@
     <p class="modal-sub">Un monto suelto que estás guardando. Va directo al pozo sin asignar.</p>
     <div class="field">
       <label>Monto</label>
-      <input type="number" inputmode="decimal" class="amt-input" id="in-monto" placeholder="0" min="0">
+      <input type="text" inputmode="numeric" class="amt-input" id="in-monto" placeholder="0" autocomplete="off">
       <div class="cur-toggle" data-field="in-monto">
         <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
         <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
@@ -437,7 +438,7 @@
     </div>
     <div class="field">
       <label>Objetivo (monto total estimado)</label>
-      <input type="number" inputmode="decimal" class="amt-input" id="meta-objetivo" placeholder="0" min="0">
+      <input type="text" inputmode="numeric" class="amt-input" id="meta-objetivo" placeholder="0" autocomplete="off">
       <div class="cur-toggle" data-field="meta-objetivo">
         <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
         <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
@@ -485,7 +486,7 @@
     </div>
     <div class="field">
       <label>Monto a asignar</label>
-      <input type="number" inputmode="decimal" class="amt-input" id="as-monto" placeholder="0" min="0">
+      <input type="text" inputmode="numeric" class="amt-input" id="as-monto" placeholder="0" autocomplete="off">
       <div class="cur-toggle" data-field="as-monto">
         <button type="button" class="cur-btn sel" data-cur="ARS">$ pesos</button>
         <button type="button" class="cur-btn" data-cur="USD">US$ dólares</button>
@@ -601,11 +602,22 @@
     return "≈ US$ " + u.toLocaleString("en-US", {maximumFractionDigits: u>=100?0:2});
   };
   const toARS = (val, fieldId) => (curFields[fieldId] === "USD") ? (state.rate ? val*state.rate : null) : val;
+  const parseAmount = (str) => {
+    const raw = (str||"").toString().replace(/\D/g,"");
+    return raw ? parseInt(raw,10) : NaN;
+  };
+  function formatAmountField(el){
+    const raw = el.value.replace(/\D/g,"");
+    el.value = raw ? Number(raw).toLocaleString("es-AR") : "";
+  }
+  function setFormattedAmount(fieldId, num){
+    $("#"+fieldId).value = (num || num===0) ? Math.round(num).toLocaleString("es-AR") : "";
+  }
 
   function updateConvHint(fieldId){
     const input = $("#"+fieldId), conv = $("#"+fieldId+"-conv");
     if(!input || !conv) return;
-    const val = parseFloat(input.value);
+    const val = parseAmount(input.value);
     if(!(val > 0)){ conv.innerHTML = ""; return; }
     const cur = curFields[fieldId];
     if(!state.rate){ conv.textContent = "Cotización del dólar no disponible todavía"; return; }
@@ -633,7 +645,10 @@
         updateConvHint(fieldId);
       });
     });
-    input.addEventListener("input", ()=> updateConvHint(fieldId));
+    input.addEventListener("input", ()=>{
+      formatAmountField(input);
+      updateConvHint(fieldId);
+    });
   }
   ["in-monto","meta-objetivo","as-monto"].forEach(setupCurrencyToggle);
   fetchRate();
@@ -661,12 +676,15 @@
     $("#pool-usd").textContent = usdTxt(state.pozo);
     const asignadoTotal = state.metas.reduce((s,m)=>s + (m.asignado||0), 0);
     const total = state.pozo + asignadoTotal;
-    const objetivoTotal = state.metas.reduce((s,m)=>s + (m.objetivo||0), 0) || 1;
+    const objetivoTotalRaw = state.metas.reduce((s,m)=>s + (m.objetivo||0), 0);
+    const objetivoTotal = objetivoTotalRaw || 1;
     const pct = Math.min(100, Math.round((asignadoTotal/objetivoTotal)*100));
     $("#stat-total").textContent = money(total);
     $("#stat-total-usd").textContent = usdTxt(total);
     $("#stat-asignado").textContent = money(asignadoTotal);
     $("#stat-asignado-usd").textContent = usdTxt(asignadoTotal);
+    $("#stat-planificado").textContent = money(objetivoTotalRaw);
+    $("#stat-planificado-usd").textContent = usdTxt(objetivoTotalRaw);
     $("#stat-pct").textContent = pct + "%";
     $("#stat-bar").style.width = pct + "%";
 
@@ -1078,7 +1096,7 @@
     setTimeout(()=>$("#in-monto").focus(), 250);
   });
   $("#in-save").addEventListener("click", async ()=>{
-    const raw = parseFloat($("#in-monto").value);
+    const raw = parseAmount($("#in-monto").value);
     const errEl = $("#in-err");
     if(!(raw > 0)){ errEl.textContent = "Poné un monto mayor a cero."; errEl.classList.add("show"); return; }
     const monto = toARS(raw, "in-monto");
@@ -1100,7 +1118,7 @@
     pendingPresupuesto = null;
     $("#meta-title").textContent = m ? "Editar meta" : "Nueva meta";
     $("#meta-nombre").value = m ? m.nombre : "";
-    $("#meta-objetivo").value = m ? m.objetivo : "";
+    $("#meta-objetivo").value = m ? Math.round(m.objetivo).toLocaleString("es-AR") : "";
     $("#meta-fecha").value = m && m.fechaObjetivo ? m.fechaObjetivo : "";
     $("#meta-file").value = "";
     $("#meta-file-status").textContent = "";
@@ -1156,7 +1174,7 @@
   }));
   $("#meta-save").addEventListener("click", async ()=>{
     const nombre = $("#meta-nombre").value.trim();
-    const rawObjetivo = parseFloat($("#meta-objetivo").value);
+    const rawObjetivo = parseAmount($("#meta-objetivo").value);
     const fecha = $("#meta-fecha").value || null;
     const chip = $("#meta-chips .chip.sel");
     const emoji = chip ? chip.dataset.e : "🏠";
@@ -1215,10 +1233,10 @@
     openModal("#ov-asignar");
   }
   $("#btn-asignar-pozo").addEventListener("click", ()=> openAsignarModal());
-  $("#as-max").addEventListener("click", ()=> { curFields["as-monto"]="ARS"; document.querySelector('.cur-toggle[data-field="as-monto"] .cur-btn[data-cur="ARS"]').click(); $("#as-monto").value = state.pozo; updateConvHint("as-monto"); });
+  $("#as-max").addEventListener("click", ()=> { curFields["as-monto"]="ARS"; document.querySelector('.cur-toggle[data-field="as-monto"] .cur-btn[data-cur="ARS"]').click(); setFormattedAmount("as-monto", state.pozo); updateConvHint("as-monto"); });
   $("#as-save").addEventListener("click", async ()=>{
     const metaId = $("#as-meta").value;
-    const raw = parseFloat($("#as-monto").value);
+    const raw = parseAmount($("#as-monto").value);
     const errEl = $("#as-err");
     if(!metaId || !(raw > 0)){ errEl.textContent = "Revisá el monto: no puede superar el pozo disponible."; errEl.classList.add("show"); return; }
     const monto = toARS(raw, "as-monto");
